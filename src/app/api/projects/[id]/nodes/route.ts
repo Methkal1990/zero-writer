@@ -27,6 +27,13 @@ export async function GET(req: NextRequest) {
       .eq("project_id", projectId);
     if ((count ?? 0) > 0) return;
 
+    // Get project data to populate plot file
+    const { data: projectData } = await supabase
+      .from("projects")
+      .select("plot")
+      .eq("id", projectId)
+      .single();
+
     // Create draft folder
     const { data: draftFolder } = await supabase
       .from("project_nodes")
@@ -39,13 +46,43 @@ export async function GET(req: NextRequest) {
       // no chapters by default
     }
     for (const name of rootFiles) {
+      const content = name === "plot" && projectData?.plot ? projectData.plot : null;
       await supabase
         .from("project_nodes")
-        .insert({ project_id: projectId, kind: "file", name });
+        .insert({ project_id: projectId, kind: "file", name, content });
     }
   };
 
   await ensureDefaults();
+
+  // Migration: populate existing plot files with project plot content if empty
+  const migratePlotFile = async () => {
+    const { data: projectData } = await supabase
+      .from("projects")
+      .select("plot")
+      .eq("id", projectId)
+      .single();
+
+    if (!projectData?.plot) return;
+
+    const { data: plotFile } = await supabase
+      .from("project_nodes")
+      .select("id, content")
+      .eq("project_id", projectId)
+      .eq("name", "plot")
+      .eq("kind", "file")
+      .is("parent_id", null)
+      .single();
+
+    if (plotFile && !plotFile.content) {
+      await supabase
+        .from("project_nodes")
+        .update({ content: projectData.plot })
+        .eq("id", plotFile.id);
+    }
+  };
+
+  await migratePlotFile();
 
   const { data: nodes } = await supabase
     .from("project_nodes")
