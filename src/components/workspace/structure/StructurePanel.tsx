@@ -1,14 +1,13 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { Folder, File, BookOpen, Edit2, Plus } from "lucide-react";
 
 type NodeKind = "folder" | "file" | "chapter";
-interface Node { id: string; parent_id: string | null; kind: NodeKind; name: string; chapter_id: string | null }
+interface Node { id: string; parent_id: string | null; kind: NodeKind; name: string; chapter_id: string | null; content: string | null }
 
-export default function StructurePanel({ projectId, selectedId, onSelectChapter }: { projectId: string; selectedId: string | null; onSelectChapter: (id: string) => void }) {
+export default function StructurePanel({ projectId, selectedId, onSelectNode }: { projectId: string; selectedId: string | null; onSelectNode: (id: string) => void }) {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [loading, setLoading] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState("");
 
@@ -33,20 +32,47 @@ export default function StructurePanel({ projectId, selectedId, onSelectChapter 
 
   const childrenOf = (parentId: string | null) => (tree[parentId ?? "root"] ?? []);
 
+  // Check if a node is under the "draft" folder (making it a chapter)
+  const isNodeAChapter = (node: Node): boolean => {
+    if (node.kind === 'folder') return false;
+    
+    // Find the draft folder
+    const draftFolder = nodes.find(n => n.name === 'draft' && n.kind === 'folder' && !n.parent_id);
+    if (!draftFolder) return false;
+
+    // Check if this node or any of its ancestors is the draft folder
+    let current: Node | undefined = node;
+    while (current) {
+      if (current.parent_id === draftFolder.id || current.id === draftFolder.id) {
+        return true;
+      }
+      current = nodes.find(n => n.id === current?.parent_id);
+    }
+    return false;
+  };
+
   const createNode = async (kind: NodeKind) => {
-    if (!newName.trim()) return;
     setLoading(true);
     try {
-      const current = selectedNodeId ? nodes.find(n => n.id === selectedNodeId) ?? null : null;
+      const current = selectedId ? nodes.find(n => n.id === selectedId) ?? null : null;
       const parentId = current ? (current.kind === "folder" ? current.id : current.parent_id) : null;
+      
+      // Generate untitled name based on type
+      const untitledName = kind === 'folder' ? 'Untitled Folder' : 'Untitled File';
+      
       const res = await fetch(`/api/projects/${projectId}/nodes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ parentId, kind, name: newName.trim() })
+        body: JSON.stringify({ parentId, kind, name: untitledName })
       });
       if (res.ok) {
-        setNewName("");
+        const data = await res.json();
         await reload();
+        // Auto-trigger rename for the newly created node
+        if (data.id) {
+          setRenamingId(data.id);
+          setRenameVal(untitledName);
+        }
       }
     } finally {
       setLoading(false);
@@ -66,42 +92,91 @@ export default function StructurePanel({ projectId, selectedId, onSelectChapter 
   const renderList = (parentId: string | null, depth = 0) => (
     <div className="space-y-1">
       {childrenOf(parentId).map((n) => (
-        <div key={n.id} style={{ paddingLeft: depth * 12 }} className={`flex items-center justify-between px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800 ${selectedNodeId===n.id ? 'bg-neutral-100 dark:bg-neutral-800':''}`}>
-          <button
-            className="text-left flex-1 text-sm"
-            onClick={() => { setSelectedNodeId(n.id); if (n.kind === 'chapter' && n.chapter_id) onSelectChapter(n.chapter_id); }}
+        <div key={n.id}>
+          <div 
+            style={{ paddingLeft: depth * 16 }} 
+            className={`
+              group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-200
+              ${selectedId === n.id 
+                ? 'bg-[#F5B942] text-[#1C2B3A] shadow-sm' 
+                : 'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 hover:shadow-sm'
+              }
+            `}
           >
-            {renamingId === n.id ? (
-              <input autoFocus value={renameVal} onChange={(e)=> setRenameVal(e.target.value)} onBlur={()=> renameNode(n.id)} onKeyDown={(e)=> { if (e.key==='Enter') renameNode(n.id); }} className="rounded border px-1 py-0.5 text-sm w-full" />
-            ) : (
-              <span>{n.kind === 'folder' ? '📁 ' : n.kind === 'chapter' ? '📄 ' : '📝 '} {n.name}</span>
+            <button
+              className="text-left flex-1 flex items-center gap-2 text-sm font-medium"
+              onClick={() => { onSelectNode(n.id); }}
+            >
+              {renamingId === n.id ? (
+                <input 
+                  autoFocus 
+                  value={renameVal} 
+                  onChange={(e)=> setRenameVal(e.target.value)} 
+                  onBlur={()=> renameNode(n.id)} 
+                  onKeyDown={(e)=> { if (e.key==='Enter') renameNode(n.id); }} 
+                  className="rounded-md border border-neutral-300 dark:border-neutral-600 px-2 py-1 text-sm w-full bg-white dark:bg-neutral-800" 
+                />
+              ) : (
+                <>
+                  {n.kind === 'folder' ? (
+                    <Folder size={16} className="text-[#4BB3A4] flex-shrink-0" />
+                  ) : isNodeAChapter(n) ? (
+                    <BookOpen size={16} className="text-[#F5B942] flex-shrink-0" />
+                  ) : (
+                    <File size={16} className="text-neutral-500 dark:text-neutral-400 flex-shrink-0" />
+                  )}
+                  <span className="truncate">{n.name}</span>
+                </>
+              )}
+            </button>
+            {renamingId !== n.id && (
+              <button 
+                onClick={()=> { setRenamingId(n.id); setRenameVal(n.name); }} 
+                className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                title="Rename"
+              >
+                <Edit2 size={14} className="text-neutral-500 dark:text-neutral-400" />
+              </button>
             )}
-          </button>
-          {renamingId !== n.id && (
-            <button onClick={()=> { setRenamingId(n.id); setRenameVal(n.name); }} className="text-xs text-neutral-500">Rename</button>
-          )}
-        </div>
-      ))}
-      {childrenOf(parentId).filter(n => n.kind === 'folder').map(f => (
-        <div key={`${f.id}-children`}>
-          {renderList(f.id, depth + 1)}
+          </div>
+          {n.kind === 'folder' && renderList(n.id, depth + 1)}
         </div>
       ))}
     </div>
   );
 
   return (
-    <div className="p-2 space-y-3">
-      <div className="flex items-center gap-2">
-        <input value={newName} onChange={(e)=> setNewName(e.target.value)} placeholder="New name" className="flex-1 rounded border p-1 text-sm" />
-        <button disabled={loading} onClick={()=> createNode('folder')} className="px-2 py-1 rounded border text-sm">+ Folder</button>
-        <button disabled={loading} onClick={()=> createNode('file')} className="px-2 py-1 rounded border text-sm">+ File</button>
-        <button disabled={loading} onClick={()=> createNode('chapter')} className="px-2 py-1 rounded border text-sm">+ Chapter</button>
+    <div className="p-4 space-y-4">
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <button 
+            disabled={loading} 
+            onClick={()=> createNode('folder')} 
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium transition-colors hover:bg-[#4BB3A4] hover:text-white hover:border-[#4BB3A4] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus size={14} />
+            <Folder size={14} />
+            Folder
+          </button>
+          <button 
+            disabled={loading} 
+            onClick={()=> createNode('file')} 
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium transition-colors hover:bg-neutral-600 hover:text-white hover:border-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus size={14} />
+            <File size={14} />
+            File
+          </button>
+        </div>
       </div>
 
-      <div className="text-xs text-neutral-500">Select a folder to create inside it. If a file is selected, new items are created alongside it.</div>
+      <div className="text-xs text-neutral-500 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-3">
+        💡 Click to create, then rename. Files in <span className="font-medium text-[#F5B942]">draft</span> folder become chapters automatically.
+      </div>
 
-      {renderList(null)}
+      <div className="space-y-1">
+        {renderList(null)}
+      </div>
     </div>
   );
 }
