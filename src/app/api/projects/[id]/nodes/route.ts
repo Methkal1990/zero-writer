@@ -49,9 +49,9 @@ export async function GET(req: NextRequest) {
 
   const { data: nodes } = await supabase
     .from("project_nodes")
-    .select("id, project_id, parent_id, kind, name, chapter_id, position")
+    .select("id, project_id, parent_id, kind, name, chapter_id, content, position")
     .eq("project_id", projectId)
-    .order("position", { ascending: true });
+    .order("created_at", { ascending: true });
 
   return NextResponse.json({ nodes: nodes ?? [] });
 }
