@@ -71,7 +71,6 @@ export async function POST(req: NextRequest) {
   }> = [];
   for (const call of toolCalls) {
     // OpenAI v1 returns tool calls with type and function fields
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const fnName = (call as unknown as { function?: { name?: string } })
       .function?.name as string | undefined;
     if (fnName === "read_current") {

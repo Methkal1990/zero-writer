@@ -48,5 +48,6 @@ export async function createSupabaseRouteHandlerClient() {
 
 export async function getRequestOrigin(): Promise<string> {
   const h = await headers();
-  return h.get("origin") ?? env.client.NEXT_PUBLIC_SITE_URL;
+  const origin = h.get("origin");
+  return origin || env.client.NEXT_PUBLIC_SITE_URL;
 }
