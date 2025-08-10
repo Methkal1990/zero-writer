@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { generateText } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { env } from "@/env";
