@@ -206,37 +206,41 @@ export default function StructurePanel({
   );
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="space-y-3">
-        <div className="flex gap-2">
-          <button
-            disabled={loading}
-            onClick={() => createNode("folder")}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium transition-colors hover:bg-[#4BB3A4] hover:text-white hover:border-[#4BB3A4] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus size={14} />
-            <Folder size={14} />
-            Folder
-          </button>
-          <button
-            disabled={loading}
-            onClick={() => createNode("file")}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium transition-colors hover:bg-neutral-600 hover:text-white hover:border-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Plus size={14} />
-            <File size={14} />
-            File
-          </button>
+    <div className="h-full flex flex-col min-h-0">
+      <div className="flex-shrink-0 p-4 space-y-4">
+        <div className="space-y-3">
+          <div className="flex gap-2">
+            <button
+              disabled={loading}
+              onClick={() => createNode("folder")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium transition-colors hover:bg-[#4BB3A4] hover:text-white hover:border-[#4BB3A4] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={14} />
+              <Folder size={14} />
+              Folder
+            </button>
+            <button
+              disabled={loading}
+              onClick={() => createNode("file")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium transition-colors hover:bg-neutral-600 hover:text-white hover:border-neutral-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={14} />
+              <File size={14} />
+              File
+            </button>
+          </div>
+        </div>
+
+        <div className="text-xs text-neutral-500 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-3">
+          💡 Click to create, then rename. Files in{" "}
+          <span className="font-medium text-[#F5B942]">draft</span> folder
+          become chapters automatically.
         </div>
       </div>
 
-      <div className="text-xs text-neutral-500 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-3">
-        💡 Click to create, then rename. Files in{" "}
-        <span className="font-medium text-[#F5B942]">draft</span> folder become
-        chapters automatically.
+      <div className="flex-1 min-h-0 overflow-auto p-4 pt-0">
+        <div className="space-y-1">{renderList(null)}</div>
       </div>
-
-      <div className="space-y-1">{renderList(null)}</div>
     </div>
   );
 }
