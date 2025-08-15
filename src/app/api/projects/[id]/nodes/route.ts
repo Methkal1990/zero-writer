@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   if (!project || project.user_id !== user.id)
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // Ensure default structure exists: draft folder, plus files world/characters/plot/outline
+  // Ensure default structure exists: draft folder, plus organized story element folders and files
   const ensureDefaults = async () => {
     const { count } = await supabase
       .from("project_nodes")
@@ -27,66 +27,185 @@ export async function GET(req: NextRequest) {
       .eq("project_id", projectId);
     if ((count ?? 0) > 0) return;
 
-    // Get project data to populate plot file
+    // Get project data to populate files with wizard content
     const { data: projectData } = await supabase
       .from("projects")
-      .select("plot")
+      .select("*")
       .eq("id", projectId)
       .single();
 
-    // Create draft folder
-    const { data: draftFolder } = await supabase
+    // Create main folders
+    await supabase
       .from("project_nodes")
       .insert({ project_id: projectId, kind: "folder", name: "draft" })
       .select("id")
       .single();
 
-    const rootFiles = ["world", "characters", "plot", "outline"];
-    if (draftFolder) {
-      // no chapters by default
+    const { data: storyElementsFolder } = await supabase
+      .from("project_nodes")
+      .insert({ project_id: projectId, kind: "folder", name: "story-elements" })
+      .select("id")
+      .single();
+
+    const { data: worldbuildingFolder } = await supabase
+      .from("project_nodes")
+      .insert({ project_id: projectId, kind: "folder", name: "worldbuilding" })
+      .select("id")
+      .single();
+
+    const { data: charactersFolder } = await supabase
+      .from("project_nodes")
+      .insert({ project_id: projectId, kind: "folder", name: "characters" })
+      .select("id")
+      .single();
+
+    const { data: plotStructureFolder } = await supabase
+      .from("project_nodes")
+      .insert({ project_id: projectId, kind: "folder", name: "plot-structure" })
+      .select("id")
+      .single();
+
+    const { data: writingStyleFolder } = await supabase
+      .from("project_nodes")
+      .insert({ project_id: projectId, kind: "folder", name: "writing-style" })
+      .select("id")
+      .single();
+
+    // Create story elements files
+    if (storyElementsFolder) {
+      const storyElementsFiles = [
+        { name: "premise-logline", content: projectData?.premise || null },
+        { name: "genre-tone", content: projectData?.genre_tone || null },
+        { name: "theme", content: projectData?.theme || null },
+      ];
+
+      for (const file of storyElementsFiles) {
+        await supabase.from("project_nodes").insert({
+          project_id: projectId,
+          kind: "file",
+          name: file.name,
+          content: file.content,
+          parent_id: storyElementsFolder.id,
+        });
+      }
     }
-    for (const name of rootFiles) {
-      const content = name === "plot" && projectData?.plot ? projectData.plot : null;
-      await supabase
-        .from("project_nodes")
-        .insert({ project_id: projectId, kind: "file", name, content });
+
+    // Create worldbuilding files
+    if (worldbuildingFolder) {
+      const worldbuildingFiles = [
+        { name: "settings", content: projectData?.settings || null },
+        { name: "world-rules", content: projectData?.world_rules || null },
+        {
+          name: "culture-history",
+          content: projectData?.culture_history || null,
+        },
+        {
+          name: "sensory-details",
+          content: projectData?.sensory_details || null,
+        },
+      ];
+
+      for (const file of worldbuildingFiles) {
+        await supabase.from("project_nodes").insert({
+          project_id: projectId,
+          kind: "file",
+          name: file.name,
+          content: file.content,
+          parent_id: worldbuildingFolder.id,
+        });
+      }
+    }
+
+    // Create characters files
+    if (charactersFolder) {
+      const charactersFiles = [
+        { name: "protagonist", content: projectData?.protagonist || null },
+        { name: "antagonist", content: projectData?.antagonist || null },
+        {
+          name: "supporting-cast",
+          content: projectData?.supporting_cast || null,
+        },
+        {
+          name: "relationships",
+          content: projectData?.character_relationships || null,
+        },
+      ];
+
+      for (const file of charactersFiles) {
+        await supabase.from("project_nodes").insert({
+          project_id: projectId,
+          kind: "file",
+          name: file.name,
+          content: file.content,
+          parent_id: charactersFolder.id,
+        });
+      }
+    }
+
+    // Create plot structure files
+    if (plotStructureFolder) {
+      const plotStructureFiles = [
+        { name: "outline-beats", content: projectData?.outline_beats || null },
+        { name: "conflict", content: projectData?.conflict || null },
+        {
+          name: "pacing-resolution",
+          content: projectData?.pacing_resolution || null,
+        },
+        { name: "subplots", content: projectData?.subplots || null },
+      ];
+
+      for (const file of plotStructureFiles) {
+        await supabase.from("project_nodes").insert({
+          project_id: projectId,
+          kind: "file",
+          name: file.name,
+          content: file.content,
+          parent_id: plotStructureFolder.id,
+        });
+      }
+    }
+
+    // Create writing style files
+    if (writingStyleFolder) {
+      const writingStyleFiles = [
+        { name: "point-of-view", content: projectData?.point_of_view || null },
+        { name: "voice-tone", content: projectData?.voice_tone || null },
+      ];
+
+      for (const file of writingStyleFiles) {
+        await supabase.from("project_nodes").insert({
+          project_id: projectId,
+          kind: "file",
+          name: file.name,
+          content: file.content,
+          parent_id: writingStyleFolder.id,
+        });
+      }
+    }
+
+    // Create legacy files at root level for backward compatibility
+    const legacyFiles = [
+      { name: "plot", content: projectData?.plot || null },
+      { name: "outline", content: null },
+    ];
+
+    for (const file of legacyFiles) {
+      await supabase.from("project_nodes").insert({
+        project_id: projectId,
+        kind: "file",
+        name: file.name,
+        content: file.content,
+      });
     }
   };
 
   await ensureDefaults();
 
-  // Migration: populate existing plot files with project plot content if empty
-  const migratePlotFile = async () => {
-    const { data: projectData } = await supabase
-      .from("projects")
-      .select("plot")
-      .eq("id", projectId)
-      .single();
-
-    if (!projectData?.plot) return;
-
-    const { data: plotFile } = await supabase
-      .from("project_nodes")
-      .select("id, content")
-      .eq("project_id", projectId)
-      .eq("name", "plot")
-      .eq("kind", "file")
-      .is("parent_id", null)
-      .single();
-
-    if (plotFile && !plotFile.content) {
-      await supabase
-        .from("project_nodes")
-        .update({ content: projectData.plot })
-        .eq("id", plotFile.id);
-    }
-  };
-
-  await migratePlotFile();
-
   const { data: nodes } = await supabase
     .from("project_nodes")
-    .select("id, project_id, parent_id, kind, name, chapter_id, content, position")
+    .select(
+      "id, project_id, parent_id, kind, name, chapter_id, content, position"
+    )
     .eq("project_id", projectId)
     .order("created_at", { ascending: true });
 
