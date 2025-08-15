@@ -13,6 +13,28 @@ create table if not exists public.projects (
   title text,
   description text,
   plot text,
+  -- Story Foundation
+  premise text,
+  genre_tone text,
+  theme text,
+  -- Worldbuilding Layer
+  settings text,
+  world_rules text,
+  culture_history text,
+  sensory_details text,
+  -- Characters
+  protagonist text,
+  antagonist text,
+  supporting_cast text,
+  character_relationships text,
+  -- Plot Structure
+  outline_beats text,
+  conflict text,
+  pacing_resolution text,
+  subplots text,
+  -- Writing Flow & Style
+  point_of_view text,
+  voice_tone text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -114,3 +136,5 @@ drop trigger if exists update_nodes_updated_at on public.project_nodes;
 create trigger update_nodes_updated_at
   before update on public.project_nodes
   for each row execute function update_updated_at_column();
+
+

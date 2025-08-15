@@ -227,6 +227,28 @@ describe("/api/projects POST", () => {
       title: "Test Novel",
       description: "A test description",
       plot: "Test plot",
+      // Story Foundation
+      premise: null,
+      genre_tone: null,
+      theme: null,
+      // Worldbuilding Layer
+      settings: null,
+      world_rules: null,
+      culture_history: null,
+      sensory_details: null,
+      // Characters
+      protagonist: null,
+      antagonist: null,
+      supporting_cast: null,
+      character_relationships: null,
+      // Plot Structure
+      outline_beats: null,
+      conflict: null,
+      pacing_resolution: null,
+      subplots: null,
+      // Writing Flow & Style
+      point_of_view: null,
+      voice_tone: null,
     });
   });
 
@@ -329,6 +351,232 @@ describe("/api/projects POST", () => {
       title: null,
       description: null,
       plot: null,
+      // Story Foundation
+      premise: null,
+      genre_tone: null,
+      theme: null,
+      // Worldbuilding Layer
+      settings: null,
+      world_rules: null,
+      culture_history: null,
+      sensory_details: null,
+      // Characters
+      protagonist: null,
+      antagonist: null,
+      supporting_cast: null,
+      character_relationships: null,
+      // Plot Structure
+      outline_beats: null,
+      conflict: null,
+      pacing_resolution: null,
+      subplots: null,
+      // Writing Flow & Style
+      point_of_view: null,
+      voice_tone: null,
+    });
+  });
+
+  describe("Book Wizard Fields", () => {
+    it("creates a project with full book wizard data", async () => {
+      const mockUser = { id: "user-123" };
+      const mockProject = { id: "project-456" };
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: mockUser },
+      });
+      mockSupabaseClient.single.mockResolvedValue({
+        data: mockProject,
+        error: null,
+      });
+
+      const request = {
+        json: () =>
+          Promise.resolve({
+            kind: "fiction",
+            title: "Epic Fantasy Novel",
+            description: "A comprehensive fantasy story",
+            plot: "A hero's journey through magical lands",
+            // Story Foundation
+            premise:
+              "A young wizard discovers their true heritage and must save the world",
+            genre_tone: "Epic Fantasy with dark undertones",
+            theme: "The power of friendship and self-discovery",
+            // Worldbuilding Layer
+            settings: "Medieval fantasy world with floating cities",
+            world_rules:
+              "Magic requires emotional control and drains physical energy",
+            culture_history:
+              "Ancient civilization fell due to magical catastrophe",
+            sensory_details:
+              "Crisp mountain air, glowing crystals, echoing caverns",
+            // Characters
+            protagonist:
+              "Alex: 17-year-old orphan with hidden magical abilities",
+            antagonist:
+              "Dark Lord Malachar: seeks to restore the old magical order",
+            supporting_cast:
+              "Mentor wizard Eldara, loyal friend Marcus, mysterious Sage",
+            character_relationships:
+              "Alex struggles to trust after betrayal, mentors guide reluctantly",
+            // Plot Structure
+            outline_beats:
+              "Discovery, Training, First Trial, Betrayal, Final Confrontation",
+            conflict:
+              "Internal: self-doubt, External: magical threats to homeland",
+            pacing_resolution:
+              "Slow build through training, accelerating action, satisfying resolution",
+            subplots: "Romance with fellow student, mystery of parents' death",
+            // Writing Flow & Style
+            point_of_view: "Third-person limited, Alex's perspective",
+            voice_tone:
+              "Lyrical but accessible, building tension through intimate moments",
+          }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toEqual({ id: "project-456" });
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        user_id: "user-123",
+        kind: "fiction",
+        title: "Epic Fantasy Novel",
+        description: "A comprehensive fantasy story",
+        plot: "A hero's journey through magical lands",
+        // Story Foundation
+        premise:
+          "A young wizard discovers their true heritage and must save the world",
+        genre_tone: "Epic Fantasy with dark undertones",
+        theme: "The power of friendship and self-discovery",
+        // Worldbuilding Layer
+        settings: "Medieval fantasy world with floating cities",
+        world_rules:
+          "Magic requires emotional control and drains physical energy",
+        culture_history: "Ancient civilization fell due to magical catastrophe",
+        sensory_details:
+          "Crisp mountain air, glowing crystals, echoing caverns",
+        // Characters
+        protagonist: "Alex: 17-year-old orphan with hidden magical abilities",
+        antagonist:
+          "Dark Lord Malachar: seeks to restore the old magical order",
+        supporting_cast:
+          "Mentor wizard Eldara, loyal friend Marcus, mysterious Sage",
+        character_relationships:
+          "Alex struggles to trust after betrayal, mentors guide reluctantly",
+        // Plot Structure
+        outline_beats:
+          "Discovery, Training, First Trial, Betrayal, Final Confrontation",
+        conflict: "Internal: self-doubt, External: magical threats to homeland",
+        pacing_resolution:
+          "Slow build through training, accelerating action, satisfying resolution",
+        subplots: "Romance with fellow student, mystery of parents' death",
+        // Writing Flow & Style
+        point_of_view: "Third-person limited, Alex's perspective",
+        voice_tone:
+          "Lyrical but accessible, building tension through intimate moments",
+      });
+    });
+
+    it("handles partial book wizard data correctly", async () => {
+      const mockUser = { id: "user-123" };
+      const mockProject = { id: "project-456" };
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: mockUser },
+      });
+      mockSupabaseClient.single.mockResolvedValue({
+        data: mockProject,
+        error: null,
+      });
+
+      const request = {
+        json: () =>
+          Promise.resolve({
+            kind: "fiction",
+            title: "Mystery Novel",
+            // Only include some wizard fields
+            premise: "A detective investigates a series of impossible crimes",
+            genre_tone: "Cozy Mystery",
+            protagonist:
+              "Detective Sarah Chen: methodical, intuitive, haunted by past case",
+            point_of_view: "First person",
+            // Other fields will be null
+          }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toEqual({ id: "project-456" });
+      expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
+        user_id: "user-123",
+        kind: "fiction",
+        title: "Mystery Novel",
+        description: null,
+        plot: null,
+        // Filled fields
+        premise: "A detective investigates a series of impossible crimes",
+        genre_tone: "Cozy Mystery",
+        protagonist:
+          "Detective Sarah Chen: methodical, intuitive, haunted by past case",
+        point_of_view: "First person",
+        // Null fields
+        theme: null,
+        settings: null,
+        world_rules: null,
+        culture_history: null,
+        sensory_details: null,
+        antagonist: null,
+        supporting_cast: null,
+        character_relationships: null,
+        outline_beats: null,
+        conflict: null,
+        pacing_resolution: null,
+        subplots: null,
+        voice_tone: null,
+      });
+    });
+
+    it("validates that extra fields are ignored", async () => {
+      const mockUser = { id: "user-123" };
+      const mockProject = { id: "project-456" };
+
+      mockSupabaseClient.auth.getUser.mockResolvedValue({
+        data: { user: mockUser },
+      });
+      mockSupabaseClient.single.mockResolvedValue({
+        data: mockProject,
+        error: null,
+      });
+
+      const request = {
+        json: () =>
+          Promise.resolve({
+            kind: "fiction",
+            title: "Test Novel",
+            premise: "A simple story",
+            // Invalid field that should be ignored by Zod
+            invalid_field: "This should not appear in the database call",
+            another_invalid: 12345,
+          }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any;
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data).toEqual({ id: "project-456" });
+
+      // Verify that only valid schema fields are passed to database
+      const insertCall = mockSupabaseClient.insert.mock.calls[0][0];
+      expect(insertCall).not.toHaveProperty("invalid_field");
+      expect(insertCall).not.toHaveProperty("another_invalid");
+      expect(insertCall.premise).toBe("A simple story");
     });
   });
 });
