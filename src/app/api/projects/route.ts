@@ -9,6 +9,26 @@ const bodySchema = z.object({
   plot: z.string().optional(),
 });
 
+export async function GET() {
+  const supabase = await createSupabaseRouteHandlerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: projects, error } = await supabase
+    .from("projects")
+    .select("id, title, description, created_at, updated_at")
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false });
+
+  if (error)
+    return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ projects: projects ?? [] });
+}
+
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseRouteHandlerClient();
   const {
