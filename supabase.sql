@@ -13,7 +13,8 @@ create table if not exists public.projects (
   title text,
   description text,
   plot text,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists idx_projects_user on public.projects(user_id);
@@ -90,3 +91,26 @@ create policy if not exists "nodes_select_owner"
 create policy if not exists "nodes_write_owner"
   on public.project_nodes for all
   using (exists (select 1 from public.projects p where p.id = project_nodes.project_id and p.user_id = auth.uid()));
+
+-- 5) Add updated_at column to existing projects table (safe migration)
+alter table public.projects add column if not exists updated_at timestamptz not null default now();
+
+-- 6) Function and triggers for updated_at timestamps
+create or replace function update_updated_at_column()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+-- Drop triggers if they exist and recreate them
+drop trigger if exists update_projects_updated_at on public.projects;
+create trigger update_projects_updated_at
+  before update on public.projects
+  for each row execute function update_updated_at_column();
+
+drop trigger if exists update_nodes_updated_at on public.project_nodes;
+create trigger update_nodes_updated_at
+  before update on public.project_nodes
+  for each row execute function update_updated_at_column();
