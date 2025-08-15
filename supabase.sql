@@ -9,7 +9,7 @@ create extension if not exists pgcrypto with schema extensions;
 create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  kind text not null check (kind in ('fiction','non-fiction')),
+  kind text not null check (kind = 'fiction'),
   title text,
   description text,
   plot text,

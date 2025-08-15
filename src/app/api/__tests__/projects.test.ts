@@ -131,7 +131,7 @@ describe("/api/projects POST", () => {
     const request = {
       json: () =>
         Promise.resolve({
-          kind: "invalid-kind", // Invalid enum value
+          kind: "non-fiction", // Invalid - only fiction is allowed
           title: "Test Novel",
         }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -155,7 +155,7 @@ describe("/api/projects POST", () => {
     const request = {
       json: () =>
         Promise.resolve({
-          kind: "non-fiction",
+          kind: "fiction",
           // Only kind is provided, all other fields are optional
         }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,7 +168,7 @@ describe("/api/projects POST", () => {
     expect(data).toEqual({ id: "project-456" });
     expect(mockSupabaseClient.insert).toHaveBeenCalledWith({
       user_id: "user-123",
-      kind: "non-fiction",
+      kind: "fiction",
       title: null,
       description: null,
       plot: null,
