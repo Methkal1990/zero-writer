@@ -5,10 +5,31 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import CharacterCount from "@tiptap/extension-character-count";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, File, Folder, Loader2, Plus, Minus, Edit3 } from "lucide-react";
+import {
+  BookOpen,
+  File,
+  Folder,
+  Loader2,
+  Plus,
+  Minus,
+  Edit3,
+} from "lucide-react";
 
-export default function Editor({ projectId, nodeId, fontSize }: { projectId: string; nodeId: string | null; fontSize: number }) {
-  const [selectedNode, setSelectedNode] = useState<{id: string, kind: string, name: string, isChapter: boolean} | null>(null);
+export default function Editor({
+  projectId,
+  nodeId,
+  fontSize,
+}: {
+  projectId: string;
+  nodeId: string | null;
+  fontSize: number;
+}) {
+  const [selectedNode, setSelectedNode] = useState<{
+    id: string;
+    kind: string;
+    name: string;
+    isChapter: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const editor = useEditor({
@@ -36,24 +57,24 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
       editor.commands.setContent("");
       return;
     }
-    
+
     const loadNodeData = async () => {
       setLoading(true);
       try {
         const res = await fetch(`/api/nodes/${nodeId}`);
         if (!res.ok) return;
         const data = await res.json();
-        
+
         // Set selected node info
-        setSelectedNode({ 
-          id: data.id, 
-          kind: data.kind, 
-          name: data.name, 
-          isChapter: data.isChapter || false 
+        setSelectedNode({
+          id: data.id,
+          kind: data.kind,
+          name: data.name,
+          isChapter: data.isChapter || false,
         });
-        
+
         // Only load content if it's a file or chapter, not a folder
-        if (data.kind === 'folder') {
+        if (data.kind === "folder") {
           editor.commands.setContent("");
           return;
         }
@@ -65,7 +86,7 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
         setLoading(false);
       }
     };
-    
+
     loadNodeData();
   }, [editor, nodeId]);
 
@@ -107,7 +128,8 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
   }, [editor, nodeId]);
 
   // Check if current selected file is an outline
-  const isOutlineFile = selectedNode?.name === "outline" && selectedNode?.kind === "file";
+  const isOutlineFile =
+    selectedNode?.name === "outline" && selectedNode?.kind === "file";
 
   // Simple autocomplete button
   const requestSuggestions = async () => {
@@ -158,18 +180,18 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
   // Convert outline JSON to HTML for editor
   const convertOutlineToHTML = (outline: typeof generatedOutline) => {
     if (!outline) return "";
-    
+
     let html = `<h1>${outline.title}</h1>`;
-    
+
     outline.parts.forEach((part) => {
       if (part.title) {
         html += `<h2>${part.title}</h2>`;
       }
-      
+
       part.chapters.forEach((chapter) => {
         html += `<h3>Chapter ${chapter.number}: ${chapter.title}</h3>`;
         html += `<p><em>${chapter.description}</em></p>`;
-        
+
         if (chapter.keyPoints.length > 0) {
           html += `<ul>`;
           chapter.keyPoints.forEach((point) => {
@@ -179,7 +201,7 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
         }
       });
     });
-    
+
     return html;
   };
 
@@ -188,7 +210,7 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
     if (!generatedOutline) return;
     setGeneratedOutline({
       ...generatedOutline,
-      title: newTitle
+      title: newTitle,
     });
   };
 
@@ -203,26 +225,32 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
     if (!generatedOutline) return;
     const newPart = {
       title: "New Part",
-      chapters: []
+      chapters: [],
     };
     setGeneratedOutline({
       ...generatedOutline,
-      parts: [...generatedOutline.parts, newPart]
+      parts: [...generatedOutline.parts, newPart],
     });
   };
 
   const removePart = (partIndex: number) => {
     if (!generatedOutline || generatedOutline.parts.length <= 1) return;
-    const newParts = generatedOutline.parts.filter((_, index) => index !== partIndex);
+    const newParts = generatedOutline.parts.filter(
+      (_, index) => index !== partIndex
+    );
     setGeneratedOutline({ ...generatedOutline, parts: newParts });
   };
 
-  const updateChapter = (partIndex: number, chapterIndex: number, updates: Partial<{
-    number: number;
-    title: string;
-    description: string;
-    keyPoints: string[];
-  }>) => {
+  const updateChapter = (
+    partIndex: number,
+    chapterIndex: number,
+    updates: Partial<{
+      number: number;
+      title: string;
+      description: string;
+      keyPoints: string[];
+    }>
+  ) => {
     if (!generatedOutline) return;
     const newParts = [...generatedOutline.parts];
     const newChapters = [...newParts[partIndex].chapters];
@@ -237,12 +265,12 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
       number: generatedOutline.parts[partIndex].chapters.length + 1,
       title: "New Chapter",
       description: "Chapter description",
-      keyPoints: []
+      keyPoints: [],
     };
     const newParts = [...generatedOutline.parts];
     newParts[partIndex] = {
       ...newParts[partIndex],
-      chapters: [...newParts[partIndex].chapters, newChapter]
+      chapters: [...newParts[partIndex].chapters, newChapter],
     };
     setGeneratedOutline({ ...generatedOutline, parts: newParts });
   };
@@ -252,7 +280,9 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
     const newParts = [...generatedOutline.parts];
     newParts[partIndex] = {
       ...newParts[partIndex],
-      chapters: newParts[partIndex].chapters.filter((_, index) => index !== chapterIndex)
+      chapters: newParts[partIndex].chapters.filter(
+        (_, index) => index !== chapterIndex
+      ),
     };
     setGeneratedOutline({ ...generatedOutline, parts: newParts });
   };
@@ -263,25 +293,36 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
     const newChapters = [...newParts[partIndex].chapters];
     newChapters[chapterIndex] = {
       ...newChapters[chapterIndex],
-      keyPoints: [...newChapters[chapterIndex].keyPoints, "New key point"]
+      keyPoints: [...newChapters[chapterIndex].keyPoints, "New key point"],
     };
     newParts[partIndex] = { ...newParts[partIndex], chapters: newChapters };
     setGeneratedOutline({ ...generatedOutline, parts: newParts });
   };
 
-  const removeKeyPoint = (partIndex: number, chapterIndex: number, pointIndex: number) => {
+  const removeKeyPoint = (
+    partIndex: number,
+    chapterIndex: number,
+    pointIndex: number
+  ) => {
     if (!generatedOutline) return;
     const newParts = [...generatedOutline.parts];
     const newChapters = [...newParts[partIndex].chapters];
     newChapters[chapterIndex] = {
       ...newChapters[chapterIndex],
-      keyPoints: newChapters[chapterIndex].keyPoints.filter((_, index) => index !== pointIndex)
+      keyPoints: newChapters[chapterIndex].keyPoints.filter(
+        (_, index) => index !== pointIndex
+      ),
     };
     newParts[partIndex] = { ...newParts[partIndex], chapters: newChapters };
     setGeneratedOutline({ ...generatedOutline, parts: newParts });
   };
 
-  const updateKeyPoint = (partIndex: number, chapterIndex: number, pointIndex: number, newPoint: string) => {
+  const updateKeyPoint = (
+    partIndex: number,
+    chapterIndex: number,
+    pointIndex: number,
+    newPoint: string
+  ) => {
     if (!generatedOutline) return;
     const newParts = [...generatedOutline.parts];
     const newChapters = [...newParts[partIndex].chapters];
@@ -289,7 +330,7 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
     newKeyPoints[pointIndex] = newPoint;
     newChapters[chapterIndex] = {
       ...newChapters[chapterIndex],
-      keyPoints: newKeyPoints
+      keyPoints: newKeyPoints,
     };
     newParts[partIndex] = { ...newParts[partIndex], chapters: newChapters };
     setGeneratedOutline({ ...generatedOutline, parts: newParts });
@@ -298,18 +339,18 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
   // Accept generated outline and add to file
   const acceptOutline = async () => {
     if (!editor || !nodeId || !generatedOutline) return;
-    
+
     // Convert outline to HTML
     const outlineHTML = convertOutlineToHTML(generatedOutline);
-    
+
     // Add the generated outline to the editor
     const currentContent = editor.getHTML();
-    const newContent = currentContent.trim() 
+    const newContent = currentContent.trim()
       ? currentContent + "<br><br>" + outlineHTML
       : outlineHTML;
-    
+
     editor.commands.setContent(newContent);
-    
+
     // Close modal and reset states
     setShowOutlineModal(false);
     setOutlineNotes("");
@@ -318,7 +359,7 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
 
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  
+
   // Outline modal states
   const [showOutlineModal, setShowOutlineModal] = useState(false);
   const [outlineNotes, setOutlineNotes] = useState("");
@@ -337,21 +378,23 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
   } | null>(null);
 
   // Render appropriate icon for node type
-  const getNodeIcon = (node: {kind: string, isChapter: boolean}) => {
-    if (node.kind === 'folder') {
+  const getNodeIcon = (node: { kind: string; isChapter: boolean }) => {
+    if (node.kind === "folder") {
       return <Folder size={16} className="text-[#4BB3A4]" />;
     }
     if (node.isChapter) {
       return <BookOpen size={16} className="text-[#F5B942]" />;
     }
-    return <File size={16} className="text-neutral-500 dark:text-neutral-400" />;
+    return (
+      <File size={16} className="text-neutral-500 dark:text-neutral-400" />
+    );
   };
 
   // Get display type for node
-  const getNodeType = (node: {kind: string, isChapter: boolean}) => {
-    if (node.kind === 'folder') return 'folder';
-    if (node.isChapter) return 'chapter';
-    return 'file';
+  const getNodeType = (node: { kind: string; isChapter: boolean }) => {
+    if (node.kind === "folder") return "folder";
+    if (node.isChapter) return "chapter";
+    return "file";
   };
 
   if (!nodeId || !selectedNode) {
@@ -365,20 +408,22 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
     );
   }
 
-  if (selectedNode.kind === 'folder') {
+  if (selectedNode.kind === "folder") {
     return (
       <div className="h-full flex items-center justify-center text-neutral-500 dark:text-neutral-400">
         <div className="text-center space-y-2">
           <Folder size={48} className="mx-auto text-[#4BB3A4] opacity-50" />
           <p className="text-sm">Folders are for organization</p>
-          <p className="text-xs">Select a file or chapter to edit its content</p>
+          <p className="text-xs">
+            Select a file or chapter to edit its content
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-0">
       {/* Header with node info */}
       <div className="flex-shrink-0 px-4 py-3 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50">
         <div className="flex items-center justify-between">
@@ -394,13 +439,15 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
               </h3>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 capitalize">
                 {getNodeType(selectedNode)}
-                {selectedNode.isChapter && <span className="ml-1 text-[#F5B942]">📖</span>}
+                {selectedNode.isChapter && (
+                  <span className="ml-1 text-[#F5B942]">📖</span>
+                )}
               </p>
             </div>
           </div>
           <div className="flex gap-2">
-            <button 
-              onClick={handleAISuggest} 
+            <button
+              onClick={handleAISuggest}
               disabled={loading}
               className="px-3 py-1.5 rounded-lg border border-neutral-300 dark:border-neutral-600 text-sm font-medium bg-white dark:bg-neutral-800 hover:bg-[#4BB3A4] hover:text-white hover:border-[#4BB3A4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -411,9 +458,9 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
       </div>
 
       {/* Editor content */}
-      <div className="flex-1 relative overflow-auto">
+      <div className="flex-1 min-h-0 overflow-auto">
         {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/50 dark:bg-neutral-900/50">
+          <div className="h-full flex items-center justify-center bg-white/50 dark:bg-neutral-900/50">
             <div className="flex items-center gap-3 text-neutral-600 dark:text-neutral-400">
               <Loader2 size={20} className="animate-spin text-[#4BB3A4]" />
               <span className="text-sm">Loading content...</span>
@@ -427,18 +474,23 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
       {/* AI suggestions popup */}
       {showSuggestions && suggestions.length > 0 && (
         <div className="absolute bottom-4 right-4 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg shadow-lg p-3 w-80 space-y-2 z-10">
-          <div className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-2">AI Suggestions</div>
+          <div className="text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+            AI Suggestions
+          </div>
           {suggestions.map((s, i) => (
-            <button 
-              key={i} 
-              onClick={() => { editor?.commands.insertContent(s); setShowSuggestions(false); }} 
+            <button
+              key={i}
+              onClick={() => {
+                editor?.commands.insertContent(s);
+                setShowSuggestions(false);
+              }}
               className="block w-full text-left text-sm px-3 py-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
             >
               {s}
             </button>
           ))}
-          <button 
-            onClick={()=> setShowSuggestions(false)} 
+          <button
+            onClick={() => setShowSuggestions(false)}
             className="block w-full text-center text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 mt-2 pt-2 border-t border-neutral-200 dark:border-neutral-700"
           >
             Close
@@ -451,16 +503,22 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <div className="p-6 border-b border-neutral-200 dark:border-neutral-700">
-              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Generate Book Outline</h2>
+              <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+                Generate Book Outline
+              </h2>
               <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                Describe your book idea and structure preferences to generate a comprehensive outline
+                Describe your book idea and structure preferences to generate a
+                comprehensive outline
               </p>
             </div>
-            
+
             <div className="p-6 space-y-6 max-h-[calc(90vh-140px)] overflow-y-auto">
               {/* Input Section */}
               <div>
-                <label htmlFor="outline-notes" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                <label
+                  htmlFor="outline-notes"
+                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2"
+                >
                   Book Outline Notes
                 </label>
                 <textarea
@@ -480,7 +538,9 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                     disabled={isGeneratingOutline || !outlineNotes.trim()}
                     className="px-6 py-3 bg-[#4BB3A4] text-white rounded-lg font-medium hover:bg-[#3a9488] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {isGeneratingOutline && <Loader2 size={16} className="animate-spin" />}
+                    {isGeneratingOutline && (
+                      <Loader2 size={16} className="animate-spin" />
+                    )}
                     {isGeneratingOutline ? "Generating..." : "Generate Outline"}
                   </button>
                 </div>
@@ -490,7 +550,9 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
               {generatedOutline && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">Generated Outline</h3>
+                    <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100">
+                      Generated Outline
+                    </h3>
                     <button
                       onClick={() => setGeneratedOutline(null)}
                       className="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
@@ -520,13 +582,17 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                               <input
                                 type="text"
                                 value={part.title}
-                                onChange={(e) => updatePartTitle(partIndex, e.target.value)}
+                                onChange={(e) =>
+                                  updatePartTitle(partIndex, e.target.value)
+                                }
                                 className="text-xl font-semibold text-[#4BB3A4] bg-transparent border-none outline-none focus:bg-white dark:focus:bg-neutral-800 focus:px-2 focus:py-1 focus:rounded-md transition-all flex-1 border-b border-neutral-200 dark:border-neutral-600 pb-2"
                               />
                             ) : (
                               <div className="text-xl font-semibold text-[#4BB3A4] flex-1 border-b border-neutral-200 dark:border-neutral-600 pb-2">
                                 <button
-                                  onClick={() => updatePartTitle(partIndex, "New Part")}
+                                  onClick={() =>
+                                    updatePartTitle(partIndex, "New Part")
+                                  }
                                   className="text-neutral-400 hover:text-[#4BB3A4] transition-colors text-sm"
                                 >
                                   + Add part title
@@ -545,11 +611,14 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                               )}
                             </div>
                           </div>
-                          
+
                           <div className="space-y-4">
                             {/* Chapters */}
                             {part.chapters.map((chapter, chapterIndex) => (
-                              <div key={chapterIndex} className="bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-600 group">
+                              <div
+                                key={chapterIndex}
+                                className="bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-600 group"
+                              >
                                 <div className="space-y-3">
                                   {/* Chapter Title and Number */}
                                   <div className="flex items-center gap-2">
@@ -557,34 +626,55 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                                       <input
                                         type="number"
                                         value={chapter.number}
-                                        onChange={(e) => updateChapter(partIndex, chapterIndex, { number: parseInt(e.target.value) || 1 })}
+                                        onChange={(e) =>
+                                          updateChapter(
+                                            partIndex,
+                                            chapterIndex,
+                                            {
+                                              number:
+                                                parseInt(e.target.value) || 1,
+                                            }
+                                          )
+                                        }
                                         className="bg-[#F5B942] text-[#1C2B3A] px-2 py-1 rounded-md text-sm font-bold w-12 text-center"
                                         min="1"
                                       />
                                       <input
                                         type="text"
                                         value={chapter.title}
-                                        onChange={(e) => updateChapter(partIndex, chapterIndex, { title: e.target.value })}
+                                        onChange={(e) =>
+                                          updateChapter(
+                                            partIndex,
+                                            chapterIndex,
+                                            { title: e.target.value }
+                                          )
+                                        }
                                         className="text-lg font-medium text-neutral-900 dark:text-neutral-100 bg-transparent border-none outline-none focus:bg-neutral-50 dark:focus:bg-neutral-700 focus:px-2 focus:py-1 focus:rounded-md transition-all flex-1"
                                       />
                                     </div>
                                     <button
-                                      onClick={() => removeChapter(partIndex, chapterIndex)}
+                                      onClick={() =>
+                                        removeChapter(partIndex, chapterIndex)
+                                      }
                                       className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                                       title="Remove chapter"
                                     >
                                       <Minus size={14} />
                                     </button>
                                   </div>
-                                  
+
                                   {/* Chapter Description */}
                                   <textarea
                                     value={chapter.description}
-                                    onChange={(e) => updateChapter(partIndex, chapterIndex, { description: e.target.value })}
+                                    onChange={(e) =>
+                                      updateChapter(partIndex, chapterIndex, {
+                                        description: e.target.value,
+                                      })
+                                    }
                                     className="w-full text-sm text-neutral-600 dark:text-neutral-400 italic bg-transparent border-none outline-none focus:bg-neutral-50 dark:focus:bg-neutral-700 focus:px-2 focus:py-1 focus:rounded-md transition-all resize-none"
                                     rows={2}
                                   />
-                                  
+
                                   {/* Key Points */}
                                   <div>
                                     <div className="flex items-center justify-between mb-2">
@@ -592,7 +682,9 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                                         Key Points:
                                       </h4>
                                       <button
-                                        onClick={() => addKeyPoint(partIndex, chapterIndex)}
+                                        onClick={() =>
+                                          addKeyPoint(partIndex, chapterIndex)
+                                        }
                                         className="text-xs text-[#4BB3A4] hover:bg-[#4BB3A4] hover:text-white px-2 py-1 rounded transition-colors flex items-center gap-1"
                                       >
                                         <Plus size={12} />
@@ -600,30 +692,50 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                                       </button>
                                     </div>
                                     <ul className="space-y-1">
-                                      {chapter.keyPoints.map((point, pointIndex) => (
-                                        <li key={pointIndex} className="text-sm text-neutral-600 dark:text-neutral-400 flex items-start gap-2 group">
-                                          <span className="text-[#4BB3A4] mt-1.5 flex-shrink-0">•</span>
-                                          <input
-                                            type="text"
-                                            value={point}
-                                            onChange={(e) => updateKeyPoint(partIndex, chapterIndex, pointIndex, e.target.value)}
-                                            className="flex-1 bg-transparent border-none outline-none focus:bg-neutral-50 dark:focus:bg-neutral-700 focus:px-2 focus:py-1 focus:rounded-md transition-all"
-                                          />
-                                          <button
-                                            onClick={() => removeKeyPoint(partIndex, chapterIndex, pointIndex)}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                            title="Remove key point"
+                                      {chapter.keyPoints.map(
+                                        (point, pointIndex) => (
+                                          <li
+                                            key={pointIndex}
+                                            className="text-sm text-neutral-600 dark:text-neutral-400 flex items-start gap-2 group"
                                           >
-                                            <Minus size={12} />
-                                          </button>
-                                        </li>
-                                      ))}
+                                            <span className="text-[#4BB3A4] mt-1.5 flex-shrink-0">
+                                              •
+                                            </span>
+                                            <input
+                                              type="text"
+                                              value={point}
+                                              onChange={(e) =>
+                                                updateKeyPoint(
+                                                  partIndex,
+                                                  chapterIndex,
+                                                  pointIndex,
+                                                  e.target.value
+                                                )
+                                              }
+                                              className="flex-1 bg-transparent border-none outline-none focus:bg-neutral-50 dark:focus:bg-neutral-700 focus:px-2 focus:py-1 focus:rounded-md transition-all"
+                                            />
+                                            <button
+                                              onClick={() =>
+                                                removeKeyPoint(
+                                                  partIndex,
+                                                  chapterIndex,
+                                                  pointIndex
+                                                )
+                                              }
+                                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                              title="Remove key point"
+                                            >
+                                              <Minus size={12} />
+                                            </button>
+                                          </li>
+                                        )
+                                      )}
                                     </ul>
                                   </div>
                                 </div>
                               </div>
                             ))}
-                            
+
                             {/* Add Chapter Button */}
                             <button
                               onClick={() => addChapter(partIndex)}
@@ -635,7 +747,7 @@ export default function Editor({ projectId, nodeId, fontSize }: { projectId: str
                           </div>
                         </div>
                       ))}
-                      
+
                       {/* Add Part Button */}
                       <button
                         onClick={addPart}
