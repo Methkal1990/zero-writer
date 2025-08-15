@@ -118,7 +118,7 @@ src/
 
 The application uses Supabase with the following main tables:
 
-- `projects` - User's writing projects (fiction/non-fiction)
+- `projects` - User's fiction writing projects
 - `chapters` - Individual chapters with content
 - `project_nodes` - Hierarchical structure (folders/files/chapters)
 

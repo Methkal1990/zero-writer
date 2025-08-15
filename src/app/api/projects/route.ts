@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
-  kind: z.enum(["fiction", "non-fiction"]),
+  kind: z.literal("fiction"),
   title: z.string().optional(),
   description: z.string().optional(),
   plot: z.string().optional(),
